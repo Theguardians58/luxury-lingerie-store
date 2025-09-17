@@ -14,9 +14,9 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(product.product_images?.[0]?.image_url || 'https://placehold.co/600x800');
 
-  const variants = product.product_variants || [];
-  const availableSizes = [...new Set(variants.map(v => v.size))];
-  const availableColors = [...new Set(variants.map(v => v.color))];
+  const variants = product.product_variants || [] 
+const availableSizes = Array.from(new Set(variants.map(v => v.size)));
+const availableColors = Array.from(new Set(variants.map(v => v.color)));
 
   const [selectedSize, setSelectedSize] = useState<string | null>(availableSizes[0] || null);
   const [selectedColor, setSelectedColor] = useState<string | null>(availableColors[0] || null);
