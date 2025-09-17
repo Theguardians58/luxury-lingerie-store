@@ -40,7 +40,7 @@ const Navbar = () => {
     src="/logo.png" // <-- CHANGE THIS if your logo has a different name
     alt="Éclat Lingerie Logo"
     width={140}
-    height={60}
+    height={50}
     priority
   />
 </Link>
