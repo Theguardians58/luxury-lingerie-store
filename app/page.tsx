@@ -30,7 +30,7 @@ export default async function HomePage() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative h-[60vh] md:h-[80vh] bg-cover bg-center text-white flex items-center justify-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1585254210019-45995511b225?q=80&w=2070&auto=format&fit=crop')" }}>
+      <section className="relative h-[60vh] md:h-[80vh] bg-cover bg-center text-white flex items-center justify-center" style={{ backgroundImage: "url('https://pawmqstygylgjtmmlgby.supabase.co/storage/v1/object/public/product-images/hero-background.jpg')" }}>
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative z-10 text-center p-4">
           <h1 className="text-4xl md:text-6xl font-serif mb-4">Embrace Your Elegance</h1>
