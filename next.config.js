@@ -11,7 +11,7 @@ const nextConfig = {
       {
         // IMPORTANT: Replace this with your actual Supabase project reference ID
         protocol: 'https',
-        hostname: 'YOUR_SUPABASE_ID.supabase.co',
+        hostname: 'pawmqstygylgjtmmlgby.supabase.co',
       },
     ],
   },
