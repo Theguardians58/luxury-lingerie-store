@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image'; 
 import Link from 'next/link';
 import { ShoppingBag, User, Menu, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
@@ -33,9 +34,19 @@ const Navbar = () => {
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="text-2xl font-bold tracking-wider text-gray-900">
-              Éclat
-            </Link>
+           // This is the NEW code
+// <-- Make sure to add this import at the top!
+
+// ... inside the component ...
+<Link href="/" className="flex items-center">
+  <Image
+    src="/logo.png" // <-- IMPORTANT: Change this to your exact filename!
+    alt="Éclat"
+    width={100} // You can adjust this
+    height={40} // You can adjust this
+    priority // Makes the logo load faster
+  />
+</Link>
           </div>
           <div className="hidden md:flex md:items-center md:space-x-8">
              <Link href="/products" className="text-gray-600 hover:text-gray-900 transition">Collections</Link>
