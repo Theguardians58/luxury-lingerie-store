@@ -34,17 +34,14 @@ const Navbar = () => {
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-           // This is the NEW code
-// <-- Make sure to add this import at the top!
-
-// ... inside the component ...
+           // REPLACE IT WITH THIS
 <Link href="/" className="flex items-center">
   <Image
-    src="/logo.png" // <-- IMPORTANT: Change this to your exact filename!
-    alt="Éclat"
-    width={100} // You can adjust this
-    height={40} // You can adjust this
-    priority // Makes the logo load faster
+    src="/logo.png" // <-- CHANGE THIS if your logo has a different name
+    alt="Éclat Lingerie Logo"
+    width={100}
+    height={40}
+    priority
   />
 </Link>
           </div>
