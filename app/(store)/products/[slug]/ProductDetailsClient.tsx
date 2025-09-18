@@ -21,7 +21,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
   const [selectedSize, setSelectedSize] = useState<string | null>(allSizes[0] || null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
-  // These states will hold the dynamically filtered options
   const [availableColorsForSize, setAvailableColorsForSize] = useState<string[]>(allColors);
   const [quantity, setQuantity] = useState(1);
 
@@ -29,21 +28,25 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
   // It runs every time the user picks a new size.
   useEffect(() => {
     if (selectedSize) {
-      // Find all variants that match the selected size
       const colorsForSelectedSize = variants
         .filter(variant => variant.size === selectedSize)
         .map(variant => variant.color);
 
-      // Update the list of available colors
-      setAvailableColorsForSize(Array.from(new Set(colorsForSelectedSize)));
+      const uniqueColorsForSize = Array.from(new Set(colorsForSelectedSize)).filter(Boolean);
+      setAvailableColorsForSize(uniqueColorsForSize);
 
-      // IMPORTANT: If the currently selected color is NOT available in the new size,
-      // reset the color selection. This prevents an invalid combination.
-      if (selectedColor && !colorsForSelectedSize.includes(selectedColor)) {
-        setSelectedColor(null); // Reset the color
+      // --- THIS IS THE NEW LOGIC ---
+      // If there is only one color available for the selected size,
+      // automatically select it for the user.
+      if (uniqueColorsForSize.length === 1) {
+        setSelectedColor(uniqueColorsForSize[0]);
+      } 
+      // --- END OF NEW LOGIC ---
+      else if (selectedColor && !uniqueColorsForSize.includes(selectedColor)) {
+        setSelectedColor(null); // Reset color if it's no longer valid
       }
     }
-  }, [selectedSize, variants, selectedColor]); // Re-run when size changes
+  }, [selectedSize, variants, selectedColor]);
 
 
   const handleAddToCart = () => {
@@ -130,4 +133,4 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
       </div>
     </div>
   );
-}
+    }
