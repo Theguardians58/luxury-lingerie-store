@@ -1,20 +1,24 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-
 import type { NextRequest } from 'next/server'
 
-// This function runs on the server when a user is sent back from Google.
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get('code')
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/'
 
-  // If there's a special 'code' from Google, exchange it for a real session.
   if (code) {
-    const supabase = createRouteHandlerClient({ cookies })
-    await supabase.auth.exchangeCodeForSession(code)
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { get: (name) => cookieStore.get(name)?.value, set: (name, value, options) => cookieStore.set(name, value, options), remove: (name, options) => cookieStore.delete(name, options) } }
+    )
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`)
+    }
   }
-
-  // URL to redirect to after sign in process completes
-  return NextResponse.redirect(requestUrl.origin + '/account')
+  return NextResponse.redirect(`${origin}/login?message=Could not authenticate user`)
 }
