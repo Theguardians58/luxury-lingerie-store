@@ -12,6 +12,7 @@ interface ProductDetailsClientProps {
 
 export default function ProductDetailsClient({ product }: ProductDetailsClientProps) {
   const { addToCart } = useCart();
+  console.log("DEBUG: Variants received from database:", product.product_variants);
   const [selectedImage, setSelectedImage] = useState(product.product_images?.[0]?.image_url || 'https://placehold.co/600x800');
 
   const variants = product.product_variants || [] 
