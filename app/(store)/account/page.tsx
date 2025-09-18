@@ -5,9 +5,8 @@ import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { User } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
-import { Database } from '@/lib/types';
+import { Database, Json } from '@/lib/types'; // <-- Import Json type
 
-// Get the exact type definitions from our "dictionary" (lib/types.ts)
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 
@@ -93,18 +92,17 @@ export default function AccountPage() {
     const toastId = toast.loading('Updating profile...');
 
     // --- THIS IS THE CRUCIAL FIX ---
-    // 1. We create an "official form" (updateData) with a specific type.
     const updateData: ProfileUpdate = {
         full_name: profile.full_name,
         mobile_number: profile.mobile_number,
-        shipping_address: profile.shipping_address,
+        // We explicitly tell TypeScript to treat our Address object as a valid Json type
+        shipping_address: profile.shipping_address as Json, 
         updated_at: new Date().toISOString(),
     };
 
-    // 2. We submit this correctly labeled form to the update function.
     const { error } = await supabase
       .from('profiles')
-      .update(updateData) // <-- We pass the correctly typed object here
+      .update(updateData)
       .eq('id', user.id);
 
     if (error) {
@@ -180,4 +178,4 @@ export default function AccountPage() {
       </div>
     </div>
   );
-  }
+      }
