@@ -42,8 +42,8 @@ export default function AccountPage() {
       console.error('Error fetching profile:', error);
     } else if (data) {
       // This is the safest way to handle the data to prevent type errors.
-      // We check each property and provide a default empty value.
-      const anyData = data as any; // This is the key: tells TypeScript to trust us.
+      // The "(data as any)" is a direct instruction to TypeScript to trust us.
+      const anyData = data as any;
       const address = anyData.shipping_address || {};
       setProfile({
         full_name: anyData.full_name || '',
@@ -57,7 +57,7 @@ export default function AccountPage() {
     }
     setLoading(false);
   }, []);
-  
+
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -81,19 +81,19 @@ export default function AccountPage() {
     if (!user) return;
 
     const toastId = toast.loading('Updating profile...');
-    
-    // We "reconstruct" the nested address object here, which is safe.
+
     const { full_name, mobile_number, street, city, state, postalCode, country } = profile;
     const shipping_address = { street, city, state, postalCode, country };
 
+    // THE FINAL FIX IS HERE: We use "as any" to override TypeScript's incorrect assumption.
     const { error } = await supabase
       .from('profiles')
       .update({
         full_name,
         mobile_number,
-        shipping_address, // Send the reconstructed object
+        shipping_address,
         updated_at: new Date().toISOString(),
-      })
+      } as any) // This is the definitive fix.
       .eq('id', user.id);
 
     if (error) {
@@ -108,7 +108,7 @@ export default function AccountPage() {
     router.push('/');
     router.refresh();
   };
-  
+
   if (loading) {
     return <div className="text-center py-20">Loading your account details...</div>;
   }
@@ -169,4 +169,4 @@ export default function AccountPage() {
       </div>
     </div>
   );
-                              }
+}
