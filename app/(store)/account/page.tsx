@@ -1,9 +1,8 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { updateUserProfile } from './actions'; // Import our new server action
+import { updateUserProfile } from './actions';
 
-// A helper type for the address object
 type Address = {
   street: string;
   city: string;
@@ -12,22 +11,21 @@ type Address = {
   country: string;
 }
 
-export default async function AccountPage() {
+// This page now accepts 'searchParams' to read messages from the URL
+export default async function AccountPage({ searchParams }: { searchParams: { message?: string }}) {
   const supabase = createServerComponentClient({ cookies });
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
-    redirect('/login'); // If not logged in, redirect to login page
+    redirect('/login');
   }
 
-  // Fetch the user's profile data on the server
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
     .single();
 
-  // Safely get the address, providing a default if it's missing
   const address: Address = (profile?.shipping_address as any) || {
       street: '', city: '', state: '', postalCode: '', country: ''
   };
@@ -35,11 +33,17 @@ export default async function AccountPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-2xl mx-auto">
+        {/* This div will display the message from the URL */}
+        {searchParams.message && (
+          <div className="mb-4 p-4 text-center text-white bg-gray-800 rounded-md">
+            <p>{searchParams.message}</p>
+          </div>
+        )}
+
         <h1 className="text-3xl font-bold mb-2">My Account</h1>
         <p className="text-gray-600 mb-8">Manage your personal information and view your order history.</p>
         <div className="bg-white p-8 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
-          {/* This form now uses the server action */}
           <form action={updateUserProfile} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700">Email Address</label>
@@ -83,7 +87,6 @@ export default async function AccountPage() {
             </div>
           </form>
         </div>
-        {/* You can add a logout button here if desired */}
       </div>
     </div>
   );
