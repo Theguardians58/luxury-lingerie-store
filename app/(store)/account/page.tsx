@@ -32,6 +32,7 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
 
   const getProfile = useCallback(async (currentUser: User) => {
+    // We explicitly tell TypeScript what kind of data to expect here.
     const { data, error } = await supabase
       .from('profiles')
       .select('full_name, mobile_number, shipping_address')
@@ -41,13 +42,12 @@ export default function AccountPage() {
     if (error) {
       console.error('Error fetching profile:', error);
     } else if (data) {
-      // Safely access the data and provide defaults if anything is missing.
-      // The "(data as any)" is a direct instruction to TypeScript to trust us.
-      const anyData = data as any;
-      const address = anyData.shipping_address || {};
+      // This is the safest way to handle the data to prevent type errors.
+      // We check each property and provide a default empty value.
+      const address = (data.shipping_address as any) || {};
       setProfile({
-        full_name: anyData.full_name || '',
-        mobile_number: anyData.mobile_number || '',
+        full_name: data.full_name || '',
+        mobile_number: data.mobile_number || '',
         street: address.street || '',
         city: address.city || '',
         state: address.state || '',
@@ -91,7 +91,7 @@ export default function AccountPage() {
       .update({
         full_name,
         mobile_number,
-        shipping_address,
+        shipping_address, // Send the reconstructed object
         updated_at: new Date().toISOString(),
       })
       .eq('id', user.id);
@@ -169,4 +169,4 @@ export default function AccountPage() {
       </div>
     </div>
   );
-      }
+                              }
