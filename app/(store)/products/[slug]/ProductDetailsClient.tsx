@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { ProductWithDetails } from '@/lib/types';
@@ -12,16 +12,39 @@ interface ProductDetailsClientProps {
 
 export default function ProductDetailsClient({ product }: ProductDetailsClientProps) {
   const { addToCart } = useCart();
-  console.log("DEBUG: Variants received from database:", product.product_variants);
   const [selectedImage, setSelectedImage] = useState(product.product_images?.[0]?.image_url || 'https://placehold.co/600x800');
 
-  const variants = product.product_variants || [] 
-const availableColors = Array.from(new Set(variants.map(v => v.color))).filter(Boolean);
-const availableColors = Array.from(new Set(variants.map(v => v.color)));
+  const variants = product.product_variants || [];
+  const allSizes = Array.from(new Set(variants.map(v => v.size))).filter(Boolean);
+  const allColors = Array.from(new Set(variants.map(v => v.color))).filter(Boolean);
 
-  const [selectedSize, setSelectedSize] = useState<string | null>(availableSizes[0] || null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(availableColors[0] || null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(allSizes[0] || null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+
+  // These states will hold the dynamically filtered options
+  const [availableColorsForSize, setAvailableColorsForSize] = useState<string[]>(allColors);
   const [quantity, setQuantity] = useState(1);
+
+  // This is the "brain" of the feature.
+  // It runs every time the user picks a new size.
+  useEffect(() => {
+    if (selectedSize) {
+      // Find all variants that match the selected size
+      const colorsForSelectedSize = variants
+        .filter(variant => variant.size === selectedSize)
+        .map(variant => variant.color);
+
+      // Update the list of available colors
+      setAvailableColorsForSize(Array.from(new Set(colorsForSelectedSize)));
+
+      // IMPORTANT: If the currently selected color is NOT available in the new size,
+      // reset the color selection. This prevents an invalid combination.
+      if (selectedColor && !colorsForSelectedSize.includes(selectedColor)) {
+        setSelectedColor(null); // Reset the color
+      }
+    }
+  }, [selectedSize, variants, selectedColor]); // Re-run when size changes
+
 
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
@@ -51,6 +74,7 @@ const availableColors = Array.from(new Set(variants.map(v => v.color)));
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
         {/* Image Gallery */}
         <div className="flex flex-col-reverse md:flex-row gap-4">
+           {/* Thumbnails */}
           <div className="flex md:flex-col gap-2">
             {product.product_images.map((image, index) => (
               <button key={index} onClick={() => setSelectedImage(image.image_url)} className={`w-16 h-20 rounded-lg overflow-hidden border-2 ${selectedImage === image.image_url ? 'border-rose-500' : 'border-transparent'}`}>
@@ -58,7 +82,8 @@ const availableColors = Array.from(new Set(variants.map(v => v.color)));
               </button>
             ))}
           </div>
-          <div className="flex-1 aspect-w-3 aspect-h-4 rounded-lg overflow-hidden">
+          {/* Main Image */}
+          <div className="flex-1 aspect-w-3 aspect-h-4 rounded-lg overflow-hidden bg-gray-100">
              <Image src={selectedImage} alt={product.name} width={600} height={800} className="object-cover w-full h-full" />
           </div>
         </div>
@@ -72,9 +97,9 @@ const availableColors = Array.from(new Set(variants.map(v => v.color)));
           {/* Size Selector */}
           <div className="mb-4">
             <h3 className="text-sm font-medium text-gray-900 mb-2">Size</h3>
-            <div className="flex gap-2">
-              {availableSizes.map(size => (
-                <button key={size} onClick={() => setSelectedSize(size)} className={`px-4 py-2 border rounded-md text-sm ${selectedSize === size ? 'bg-gray-900 text-white' : 'bg-white text-gray-700'}`}>
+            <div className="flex flex-wrap gap-2">
+              {allSizes.map(size => (
+                <button key={size} onClick={() => setSelectedSize(size)} className={`px-4 py-2 border rounded-md text-sm transition-colors ${selectedSize === size ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
                   {size}
                 </button>
               ))}
@@ -84,19 +109,25 @@ const availableColors = Array.from(new Set(variants.map(v => v.color)));
           {/* Color Selector */}
           <div className="mb-6">
              <h3 className="text-sm font-medium text-gray-900 mb-2">Color</h3>
-             <div className="flex gap-2">
-               {availableColors.map(color => (
-                 <button key={color} onClick={() => setSelectedColor(color)} className={`w-8 h-8 rounded-full border-2 ${selectedColor === color ? 'border-rose-500' : 'border-gray-300'}`} style={{ backgroundColor: color.toLowerCase() }} />
+             <div className="flex flex-wrap gap-2">
+               {availableColorsForSize.map(color => (
+                 <button 
+                   key={color} 
+                   onClick={() => setSelectedColor(color)} 
+                   className={`w-8 h-8 rounded-full border-2 transition-transform transform hover:scale-110 ${selectedColor === color ? 'border-rose-500 scale-110' : 'border-gray-300'}`} 
+                   style={{ backgroundColor: color.toLowerCase() }} 
+                   aria-label={`Select color ${color}`}
+                 />
                ))}
              </div>
           </div>
 
           {/* Add to Cart Button */}
-          <button onClick={handleAddToCart} className="w-full bg-gray-800 text-white py-3 rounded-md hover:bg-gray-700 transition">
+          <button onClick={handleAddToCart} className="w-full bg-gray-800 text-white py-3 rounded-md hover:bg-gray-700 transition disabled:bg-gray-400" disabled={!selectedSize || !selectedColor}>
             Add to Cart
           </button>
         </div>
       </div>
     </div>
   );
-                                     }
+}
