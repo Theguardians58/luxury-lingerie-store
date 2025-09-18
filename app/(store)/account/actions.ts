@@ -1,21 +1,24 @@
 'use server';
 
-import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { Database } from '@/lib/types'; // <-- We import the master dictionary
+import { Database } from '@/lib/types';
 
 export async function updateUserProfile(formData: FormData) {
-  // --- THIS IS THE CRUCIAL FIX ---
-  // We give the client the master dictionary so it knows all the types.
-  const supabase = createServerActionClient<Database>({ cookies });
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { get: (name) => cookieStore.get(name)?.value } }
+  );
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return redirect('/login');
   }
-
+  
   const shipping_address = {
     street: formData.get('street') as string,
     city: formData.get('city') as string,
@@ -24,7 +27,6 @@ export async function updateUserProfile(formData: FormData) {
     country: formData.get('country') as string,
   };
 
-  // Now, the .update() function will know the exact shape of the data it expects.
   const { error } = await supabase
     .from('profiles')
     .update({
@@ -36,10 +38,9 @@ export async function updateUserProfile(formData: FormData) {
     .eq('id', user.id);
 
   if (error) {
-    // Provide a more helpful error message
-    return redirect(`/account?message=Error: Could not update profile. ${error.message}`);
+    return redirect(`/account?message=Error: Could not update profile.`);
   }
-
+  
   revalidatePath('/account');
   return redirect(`/account?message=Profile updated successfully!`);
-    }
+                }
