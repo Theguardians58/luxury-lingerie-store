@@ -32,7 +32,6 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
 
   const getProfile = useCallback(async (currentUser: User) => {
-    // We explicitly tell TypeScript what kind of data to expect here.
     const { data, error } = await supabase
       .from('profiles')
       .select('full_name, mobile_number, shipping_address')
@@ -44,10 +43,11 @@ export default function AccountPage() {
     } else if (data) {
       // This is the safest way to handle the data to prevent type errors.
       // We check each property and provide a default empty value.
-      const address = (data.shipping_address as any) || {};
+      const anyData = data as any; // This is the key: tells TypeScript to trust us.
+      const address = anyData.shipping_address || {};
       setProfile({
-        full_name: data.full_name || '',
-        mobile_number: data.mobile_number || '',
+        full_name: anyData.full_name || '',
+        mobile_number: anyData.mobile_number || '',
         street: address.street || '',
         city: address.city || '',
         state: address.state || '',
@@ -57,7 +57,7 @@ export default function AccountPage() {
     }
     setLoading(false);
   }, []);
-
+  
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -81,7 +81,7 @@ export default function AccountPage() {
     if (!user) return;
 
     const toastId = toast.loading('Updating profile...');
-
+    
     // We "reconstruct" the nested address object here, which is safe.
     const { full_name, mobile_number, street, city, state, postalCode, country } = profile;
     const shipping_address = { street, city, state, postalCode, country };
@@ -108,7 +108,7 @@ export default function AccountPage() {
     router.push('/');
     router.refresh();
   };
-
+  
   if (loading) {
     return <div className="text-center py-20">Loading your account details...</div>;
   }
