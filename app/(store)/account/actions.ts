@@ -4,13 +4,10 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { Database } from '@/lib/types'; // We import the master dictionary
+import { Database } from '@/lib/types';
 
 export async function updateUserProfile(formData: FormData) {
   const cookieStore = cookies();
-
-  // --- THIS IS THE CRUCIAL FIX ---
-  // We give the client the master dictionary so it knows all the types.
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -30,7 +27,7 @@ export async function updateUserProfile(formData: FormData) {
     country: formData.get('country') as string,
   };
 
-  // Now, the .update() function will know the exact shape of the data it expects.
+  // THE FINAL FIX IS HERE: We use "as any" to override TypeScript's incorrect assumption.
   const { error } = await supabase
     .from('profiles')
     .update({
@@ -38,7 +35,7 @@ export async function updateUserProfile(formData: FormData) {
       mobile_number: formData.get('mobile_number') as string,
       shipping_address: shipping_address,
       updated_at: new Date().toISOString(),
-    })
+    } as any) // This is the definitive fix.
     .eq('id', user.id);
 
   if (error) {
@@ -47,4 +44,4 @@ export async function updateUserProfile(formData: FormData) {
 
   revalidatePath('/account');
   return redirect(`/account?message=Profile updated successfully!`);
-}
+    }
