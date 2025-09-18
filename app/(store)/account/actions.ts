@@ -4,10 +4,13 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { Database } from '@/lib/types';
+import { Database } from '@/lib/types'; // We import the master dictionary
 
 export async function updateUserProfile(formData: FormData) {
   const cookieStore = cookies();
+
+  // --- THIS IS THE CRUCIAL FIX ---
+  // We give the client the master dictionary so it knows all the types.
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -18,7 +21,7 @@ export async function updateUserProfile(formData: FormData) {
   if (!user) {
     return redirect('/login');
   }
-  
+
   const shipping_address = {
     street: formData.get('street') as string,
     city: formData.get('city') as string,
@@ -27,6 +30,7 @@ export async function updateUserProfile(formData: FormData) {
     country: formData.get('country') as string,
   };
 
+  // Now, the .update() function will know the exact shape of the data it expects.
   const { error } = await supabase
     .from('profiles')
     .update({
@@ -40,7 +44,7 @@ export async function updateUserProfile(formData: FormData) {
   if (error) {
     return redirect(`/account?message=Error: Could not update profile.`);
   }
-  
+
   revalidatePath('/account');
   return redirect(`/account?message=Profile updated successfully!`);
-                }
+}
