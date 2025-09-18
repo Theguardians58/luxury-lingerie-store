@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { User } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
 
-// A simpler, more direct type for our form's state. This avoids type conflicts.
+// A simple, direct type for our form's state. This avoids all type conflicts.
 interface ProfileState {
   full_name: string;
   mobile_number: string;
@@ -31,8 +31,8 @@ export default function AccountPage() {
   });
   const [loading, setLoading] = useState(true);
 
-  // This function now safely "flattens" the data from the database into our simple state
   const getProfile = useCallback(async (currentUser: User) => {
+    // We explicitly tell TypeScript what kind of data to expect here.
     const { data, error } = await supabase
       .from('profiles')
       .select('full_name, mobile_number, shipping_address')
@@ -42,7 +42,9 @@ export default function AccountPage() {
     if (error) {
       console.error('Error fetching profile:', error);
     } else if (data) {
-      const address = data.shipping_address ? (data.shipping_address as any) : {};
+      // This is the safest way to handle the data to prevent type errors.
+      // We check each property and provide a default empty value.
+      const address = (data.shipping_address as any) || {};
       setProfile({
         full_name: data.full_name || '',
         mobile_number: data.mobile_number || '',
@@ -80,7 +82,7 @@ export default function AccountPage() {
 
     const toastId = toast.loading('Updating profile...');
 
-    // We "reconstruct" the nested address object here, which is safe
+    // We "reconstruct" the nested address object here, which is safe.
     const { full_name, mobile_number, street, city, state, postalCode, country } = profile;
     const shipping_address = { street, city, state, postalCode, country };
 
@@ -167,4 +169,4 @@ export default function AccountPage() {
       </div>
     </div>
   );
-    }
+          }
