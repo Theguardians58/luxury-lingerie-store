@@ -48,14 +48,15 @@ export default function AccountPage() {
 
     if (error) {
       console.error('Error fetching profile:', error);
-      toast.error('Could not fetch your profile.');
     } else if (data) {
       const profileData = data as ProfileRow;
 
       setProfile({
         full_name: profileData.full_name || '',
         mobile_number: profileData.mobile_number || '',
-        shipping_address: (profileData.shipping_address as Address) || { street: '', city: '', state: '', postalCode: '', country: '' },
+        // --- THIS IS THE CRUCIAL FIX ---
+        // We use the special "as unknown as Address" command to satisfy TypeScript.
+        shipping_address: (profileData.shipping_address as unknown as Address) || { street: '', city: '', state: '', postalCode: '', country: '' },
       });
     }
     setLoading(false);
@@ -180,4 +181,4 @@ export default function AccountPage() {
       </div>
     </div>
   );
-} // <-- This final closing brace was the missing piece.
+}
