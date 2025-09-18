@@ -4,10 +4,11 @@ import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { Database } from '@/lib/types';
 
-// This is a secure server function that will update the user's profile.
+// This is the secure server function that will update the user's profile.
 export async function updateUserProfile(formData: FormData) {
-  const supabase = createServerActionClient({ cookies });
+  const supabase = createServerActionClient<Database>({ cookies });
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -33,11 +34,9 @@ export async function updateUserProfile(formData: FormData) {
     .eq('id', user.id);
 
   if (error) {
-    // If there's an error, redirect back with an error message
-    return redirect(`/account?message=Error: Could not update profile.`);
+    return redirect(`/account?message=Error: Could not update profile. ${error.message}`);
   }
 
-  // On success, revalidate the path and redirect with a success message
   revalidatePath('/account');
   return redirect(`/account?message=Profile updated successfully!`);
-}
+    }
