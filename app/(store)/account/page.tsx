@@ -22,12 +22,12 @@ export default function AccountPage() {
     const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
 
-    const [user, setUser] = = useState<User | null>(null);
+    const [user, setUser] = useState<User | null>(null); // <-- CORRECTED LINE
     const [fullName, setFullName] = useState('');
     const [countryCode, setCountryCode] = useState('+91');
     const [localNumber, setLocalNumber] = useState('');
     const [address, setAddress] = useState({ street: '', city: '', state: '', postalCode: '', country: '' });
-    const [loading, setLoading] = = useState(true);
+    const [loading, setLoading] = useState(true); // <-- CORRECTED LINE
 
     useEffect(() => {
         const message = searchParams.get('message');
@@ -74,8 +74,8 @@ export default function AccountPage() {
     };
 
     const handleSubmit = (formData: FormData) => {
-        startTransition(async () => {
-            await updateUserProfile(formData);
+        startTransition(() => {
+            updateUserProfile(formData);
         });
     };
 
@@ -84,7 +84,6 @@ export default function AccountPage() {
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="max-w-2xl mx-auto">
-                {/* Message display is handled by toast notifications now */}
                 <h1 className="text-3xl font-bold mb-2">My Account</h1>
                 <p className="text-gray-600 mb-8">Manage your personal information and view your order history.</p>
                 <div className="bg-white p-8 rounded-lg shadow-md">
@@ -99,7 +98,7 @@ export default function AccountPage() {
                             <input type="text" name="full_name" id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-rose-500 focus:border-rose-500" />
                         </div>
                         <div>
-                            <label htmlFor="mobile_number" className="block text-sm font-medium text-gray-700">Mobile Number</label>
+                            <label htmlFor="local_number" className="block text-sm font-medium text-gray-700">Mobile Number</label>
                             <div className="mt-1 flex gap-2">
                                 <div className="w-1/3">
                                     <input type="hidden" name="country_code" value={countryCode} />
@@ -113,7 +112,6 @@ export default function AccountPage() {
                         <div className="border-t pt-6">
                            <h3 className="text-lg font-medium">Shipping Address</h3>
                            <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                              {/* --- THIS IS THE CORRECTED SECTION --- */}
                               <div className="sm:col-span-2">
                                 <label htmlFor="street" className="block text-sm font-medium text-gray-700">Street Address</label>
                                 <input type="text" name="street" id="street" value={address.street} onChange={handleAddressChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-rose-500 focus:border-rose-500" />
@@ -146,4 +144,4 @@ export default function AccountPage() {
             </div>
         </div>
     );
-          }
+      }
