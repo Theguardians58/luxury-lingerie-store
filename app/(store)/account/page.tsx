@@ -42,7 +42,7 @@ export default function AccountPage() {
   const getProfile = useCallback(async (currentUser: User) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+.select('full_name, mobile_number, shipping_address')
       .eq('id', currentUser.id)
       .single();
 
