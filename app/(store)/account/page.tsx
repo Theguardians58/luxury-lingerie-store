@@ -31,6 +31,7 @@ export default function AccountPage() {
   });
   const [loading, setLoading] = useState(true);
 
+  // This function now safely "flattens" the data from the database into our simple state
   const getProfile = useCallback(async (currentUser: User) => {
     // We explicitly tell TypeScript what kind of data to expect here.
     const { data, error } = await supabase
@@ -169,4 +170,4 @@ export default function AccountPage() {
       </div>
     </div>
   );
-          }
+                             }
