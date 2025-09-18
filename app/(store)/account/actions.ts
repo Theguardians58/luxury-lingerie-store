@@ -4,10 +4,11 @@ import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { Database } from '@/lib/types';
+import { Database } from '@/lib/types'; // <-- We import the master dictionary
 
-// This is the secure server function that will update the user's profile.
 export async function updateUserProfile(formData: FormData) {
+  // --- THIS IS THE CRUCIAL FIX ---
+  // We give the client the master dictionary so it knows all the types.
   const supabase = createServerActionClient<Database>({ cookies });
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -23,6 +24,7 @@ export async function updateUserProfile(formData: FormData) {
     country: formData.get('country') as string,
   };
 
+  // Now, the .update() function will know the exact shape of the data it expects.
   const { error } = await supabase
     .from('profiles')
     .update({
@@ -34,6 +36,7 @@ export async function updateUserProfile(formData: FormData) {
     .eq('id', user.id);
 
   if (error) {
+    // Provide a more helpful error message
     return redirect(`/account?message=Error: Could not update profile. ${error.message}`);
   }
 
