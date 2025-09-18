@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabaseClient'; // Use the new client creator
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Chrome } from 'lucide-react'; // Using Chrome icon for Google
+import { Chrome } from 'lucide-react';
 
-const LoginPage = () => {
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const supabase = createClient(); // Create the client-side instance
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +26,7 @@ const LoginPage = () => {
       setError(error.message);
     } else {
       router.push('/account');
-      router.refresh(); // Important to re-fetch server components after login
+      router.refresh();
     }
     setLoading(false);
   };
@@ -34,7 +35,6 @@ const LoginPage = () => {
      await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // This is the URL we will create in the next step
         redirectTo: `${location.origin}/auth/callback`,
       },
     });
@@ -47,49 +47,19 @@ const LoginPage = () => {
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
-            <input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-rose-500 focus:border-rose-500"
-            />
+            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md" />
           </div>
           <div>
             <label htmlFor="password"  className="text-sm font-medium text-gray-700">Password</label>
-            <input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-rose-500 focus:border-rose-500"
-            />
+            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md" />
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 bg-gray-800 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-400"
-          >
+          <button type="submit" disabled={loading} className="w-full py-2 px-4 bg-gray-800 text-white rounded-md">
             {loading ? 'Logging in...' : 'Login'}
           </button>
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         </form>
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
-          </div>
-        </div>
-        <button
-          onClick={handleGoogleLogin}
-          className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center space-x-2 hover:bg-gray-50"
-        >
+        <div className="relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">Or continue with</span></div></div>
+        <button onClick={handleGoogleLogin} className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center space-x-2">
           <Chrome size={20} />
           <span>Google</span>
         </button>
@@ -102,6 +72,4 @@ const LoginPage = () => {
       </div>
     </div>
   );
-};
-
-export default LoginPage;
+    }
