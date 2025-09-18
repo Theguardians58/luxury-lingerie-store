@@ -16,18 +16,17 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
 
   const variants = product.product_variants || [];
   const allSizes = Array.from(new Set(variants.map(v => v.size))).filter(Boolean);
-  const allColors = Array.from(new Set(variants.map(v => v.color))).filter(Boolean);
 
   const [selectedSize, setSelectedSize] = useState<string | null>(allSizes[0] || null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
-  const [availableColorsForSize, setAvailableColorsForSize] = useState<string[]>(allColors);
+  const [availableColorsForSize, setAvailableColorsForSize] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(1);
 
-  // This is the "brain" of the feature.
-  // It runs every time the user picks a new size.
+  // This is the "brain" that reacts when the user changes the size.
   useEffect(() => {
     if (selectedSize) {
+      // 1. Find all colors available for the newly selected size.
       const colorsForSelectedSize = variants
         .filter(variant => variant.size === selectedSize)
         .map(variant => variant.color);
@@ -35,18 +34,21 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
       const uniqueColorsForSize = Array.from(new Set(colorsForSelectedSize)).filter(Boolean);
       setAvailableColorsForSize(uniqueColorsForSize);
 
-      // --- THIS IS THE NEW LOGIC ---
-      // If there is only one color available for the selected size,
-      // automatically select it for the user.
+      // 2. Decide what to do with the color selection.
+      //    A) If there's only one color, automatically select it.
       if (uniqueColorsForSize.length === 1) {
         setSelectedColor(uniqueColorsForSize[0]);
       } 
-      // --- END OF NEW LOGIC ---
-      else if (selectedColor && !uniqueColorsForSize.includes(selectedColor)) {
-        setSelectedColor(null); // Reset color if it's no longer valid
+      //    B) If there are multiple colors (or zero), we must check the current selection.
+      else {
+        // If the previously selected color is NOT valid for this new size,
+        // clear it to force the user to make a new choice.
+        if (selectedColor && !uniqueColorsForSize.includes(selectedColor)) {
+          setSelectedColor(null);
+        }
       }
     }
-  }, [selectedSize, variants, selectedColor]);
+  }, [selectedSize, variants]); // This logic now runs ONLY when the size changes.
 
 
   const handleAddToCart = () => {
@@ -133,4 +135,4 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
       </div>
     </div>
   );
-    }
+}
