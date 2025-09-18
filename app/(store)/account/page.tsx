@@ -7,7 +7,9 @@ import { User } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
 import { Database } from '@/lib/types';
 
+// Get the exact type definitions from our "dictionary" (lib/types.ts)
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 
 interface Address {
   street: string;
@@ -50,12 +52,9 @@ export default function AccountPage() {
       console.error('Error fetching profile:', error);
     } else if (data) {
       const profileData = data as ProfileRow;
-
       setProfile({
         full_name: profileData.full_name || '',
         mobile_number: profileData.mobile_number || '',
-        // --- THIS IS THE CRUCIAL FIX ---
-        // We use the special "as unknown as Address" command to satisfy TypeScript.
         shipping_address: (profileData.shipping_address as unknown as Address) || { street: '', city: '', state: '', postalCode: '', country: '' },
       });
     }
@@ -83,7 +82,7 @@ export default function AccountPage() {
             shipping_address: { ...(prev.shipping_address as Address), [name]: value } 
         }));
     } else {
-        setProfile(prev => ({ ...prev, [name]: value }));
+        setProfile(prev => ({ ...prev, [name]: value as string }));
     }
   };
 
@@ -92,14 +91,20 @@ export default function AccountPage() {
     if (!user) return;
 
     const toastId = toast.loading('Updating profile...');
-    const { error } = await supabase
-      .from('profiles')
-      .update({
+
+    // --- THIS IS THE CRUCIAL FIX ---
+    // 1. We create an "official form" (updateData) with a specific type.
+    const updateData: ProfileUpdate = {
         full_name: profile.full_name,
         mobile_number: profile.mobile_number,
         shipping_address: profile.shipping_address,
         updated_at: new Date().toISOString(),
-      })
+    };
+
+    // 2. We submit this correctly labeled form to the update function.
+    const { error } = await supabase
+      .from('profiles')
+      .update(updateData) // <-- We pass the correctly typed object here
       .eq('id', user.id);
 
     if (error) {
@@ -124,7 +129,6 @@ export default function AccountPage() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">My Account</h1>
         <p className="text-gray-600 mb-8">Manage your personal information and view your order history.</p>
-
         <div className="bg-white p-8 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
           <form onSubmit={handleUpdateProfile} className="space-y-6">
@@ -132,17 +136,14 @@ export default function AccountPage() {
               <label className="block text-sm font-medium text-gray-700">Email Address</label>
               <p className="mt-1 text-gray-500">{user?.email}</p>
             </div>
-
             <div>
               <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">Full Name</label>
               <input type="text" name="full_name" id="full_name" value={profile.full_name || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
             </div>
-
             <div>
               <label htmlFor="mobile_number" className="block text-sm font-medium text-gray-700">Mobile Number</label>
               <input type="tel" name="mobile_number" id="mobile_number" value={profile.mobile_number || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
             </div>
-
             <div className="border-t pt-6">
                <h3 className="text-lg font-medium">Shipping Address</h3>
                <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
@@ -168,17 +169,15 @@ export default function AccountPage() {
                   </div>
                </div>
             </div>
-
             <div className="flex justify-end pt-4">
               <button type="submit" className="bg-gray-800 text-white py-2 px-6 rounded-md hover:bg-gray-700">Save Changes</button>
             </div>
           </form>
         </div>
-
         <div className="mt-8 text-center">
           <button onClick={handleLogout} className="text-sm text-red-600 hover:underline">Log Out</button>
         </div>
       </div>
     </div>
   );
-}
+  }
