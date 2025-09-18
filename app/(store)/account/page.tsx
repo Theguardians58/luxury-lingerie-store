@@ -5,48 +5,40 @@ import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { User } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
+import { Database } from '@/lib/types';
 
-// A simpler, more flexible type for our form state
-interface ProfileData {
-  full_name: string;
-  mobile_number: string;
-  shipping_address: {
+// Use the official "Row" type directly from our master dictionary (lib/types.ts)
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
+// A helper type for the address object, used for safety
+type Address = {
     street: string;
     city: string;
     state: string;
     postalCode: string;
     country: string;
-  };
 }
 
 export default function AccountPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<ProfileData>({
-    full_name: '',
-    mobile_number: '',
-    shipping_address: { street: '', city: '', state: '', postalCode: '', country: '' },
-  });
+  // Initialize the state with the correct structure and null values
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const getProfile = useCallback(async (currentUser: User) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('full_name, mobile_number, shipping_address')
+      .select('*') // Select all columns from the profiles table
       .eq('id', currentUser.id)
       .single();
 
     if (error) {
       console.error('Error fetching profile:', error);
+      toast.error('Could not fetch your profile.');
     } else if (data) {
-      // Set the profile state, providing default empty values if data is null
-      setProfile({
-        full_name: data.full_name || '',
-        mobile_number: data.mobile_number || '',
-        shipping_address: data.shipping_address 
-          ? JSON.parse(JSON.stringify(data.shipping_address)) // Safely handle JSON
-          : { street: '', city: '', state: '', postalCode: '', country: '' },
-      });
+      // The data is now guaranteed to match the Profile type
+      setProfile(data);
     }
     setLoading(false);
   }, []);
@@ -64,32 +56,38 @@ export default function AccountPage() {
     checkUser();
   }, [router, getProfile]);
 
+  // A safer way to handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Check if the input is for a shipping address field
-    if (Object.keys(profile.shipping_address).includes(name)) {
-        setProfile(prev => ({ 
-            ...prev, 
-            shipping_address: { ...prev.shipping_address, [name]: value } 
-        }));
-    } else {
-        setProfile(prev => ({ ...prev, [name]: value }));
-    }
+    setProfile(prevProfile => {
+        if (!prevProfile) return null;
+
+        // Check if the input is for a shipping address field
+        const addressKeys: (keyof Address)[] = ['street', 'city', 'state', 'postalCode', 'country'];
+        if (addressKeys.includes(name as keyof Address)) {
+            const currentAddress = (prevProfile.shipping_address as Address) || {};
+            return {
+                ...prevProfile,
+                shipping_address: { ...currentAddress, [name]: value }
+            };
+        }
+
+        return { ...prevProfile, [name]: value };
+    });
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !profile) return;
 
     const toastId = toast.loading('Updating profile...');
 
-    // This object is now compatible with the database's expected types
     const { error } = await supabase
       .from('profiles')
       .update({
         full_name: profile.full_name,
         mobile_number: profile.mobile_number,
-        shipping_address: profile.shipping_address, // This object is now directly compatible
+        shipping_address: profile.shipping_address,
         updated_at: new Date().toISOString(),
       })
       .eq('id', user.id);
@@ -107,9 +105,18 @@ export default function AccountPage() {
     router.refresh();
   };
 
-  if (loading) {
+  if (loading || !profile) {
     return <div className="text-center py-20">Loading your account details...</div>;
   }
+
+  // Helper to safely access address properties
+  const getAddress = (): Address => {
+      if (profile.shipping_address && typeof profile.shipping_address === 'object' && !Array.isArray(profile.shipping_address)) {
+          return profile.shipping_address as Address;
+      }
+      return { street: '', city: '', state: '', postalCode: '', country: '' };
+  }
+  const address = getAddress();
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -125,34 +132,34 @@ export default function AccountPage() {
             </div>
             <div>
               <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">Full Name</label>
-              <input type="text" name="full_name" id="full_name" value={profile.full_name} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+              <input type="text" name="full_name" id="full_name" value={profile.full_name || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
             </div>
             <div>
               <label htmlFor="mobile_number" className="block text-sm font-medium text-gray-700">Mobile Number</label>
-              <input type="tel" name="mobile_number" id="mobile_number" value={profile.mobile_number} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+              <input type="tel" name="mobile_number" id="mobile_number" value={profile.mobile_number || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
             </div>
             <div className="border-t pt-6">
                <h3 className="text-lg font-medium">Shipping Address</h3>
                <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                   <div className="sm:col-span-2">
                     <label htmlFor="street" className="block text-sm font-medium text-gray-700">Street Address</label>
-                    <input type="text" name="street" id="street" value={profile.shipping_address.street} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <input type="text" name="street" id="street" value={address.street || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                   </div>
                   <div>
                     <label htmlFor="city" className="block text-sm font-medium text-gray-700">City</label>
-                    <input type="text" name="city" id="city" value={profile.shipping_address.city} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <input type="text" name="city" id="city" value={address.city || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                   </div>
                   <div>
                     <label htmlFor="state" className="block text-sm font-medium text-gray-700">State / Province</label>
-                    <input type="text" name="state" id="state" value={profile.shipping_address.state} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <input type="text" name="state" id="state" value={address.state || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                   </div>
                    <div>
                     <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">Postal Code</label>
-                    <input type="text" name="postalCode" id="postalCode" value={profile.shipping_address.postalCode} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <input type="text" name="postalCode" id="postalCode" value={address.postalCode || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                   </div>
                   <div>
                     <label htmlFor="country" className="block text-sm font-medium text-gray-700">Country</label>
-                    <input type="text" name="country" id="country" value={profile.shipping_address.country} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <input type="text" name="country" id="country" value={address.country || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                   </div>
                </div>
             </div>
@@ -167,4 +174,4 @@ export default function AccountPage() {
       </div>
     </div>
   );
-              }
+  }
