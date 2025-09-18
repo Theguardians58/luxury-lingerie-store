@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabaseClient'; // Use the new client creator
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -13,6 +13,7 @@ export default function SignupPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const supabase = createClient(); // Create the client-side instance
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +29,8 @@ export default function SignupPage() {
         data: {
           full_name: fullName,
         },
+        // The new library requires the callback URL to be set here for email confirmations
+        emailRedirectTo: `${location.origin}/auth/callback`,
       },
     });
 
@@ -35,8 +38,6 @@ export default function SignupPage() {
       setError(error.message);
     } else {
       setMessage('Success! Please check your email for a confirmation link to complete your registration.');
-      // Optional: redirect after a delay
-      // setTimeout(() => router.push('/login'), 5000);
     }
     setLoading(false);
   };
@@ -47,7 +48,12 @@ export default function SignupPage() {
         <h2 className="text-2xl font-bold text-center">Create a New Account</h2>
 
         {message ? (
-          <p className="text-center text-green-600 bg-green-50 p-4 rounded-md">{message}</p>
+          <div className="text-center">
+            <p className="text-green-600 bg-green-50 p-4 rounded-md">{message}</p>
+            <Link href="/login" className="mt-4 inline-block font-medium text-rose-500 hover:underline">
+                Proceed to Login
+            </Link>
+          </div>
         ) : (
           <form onSubmit={handleSignUp} className="space-y-6">
             <div>
@@ -55,7 +61,6 @@ export default function SignupPage() {
               <input
                 id="fullName"
                 type="text"
-                placeholder="Jane Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
@@ -67,7 +72,6 @@ export default function SignupPage() {
               <input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
