@@ -1,5 +1,5 @@
 import ProductCard from '@/components/products/ProductCard';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { ProductWithDetails, Database } from '@/lib/types';
@@ -10,7 +10,12 @@ interface CategoryNode extends Category {
 }
 
 async function getProductsAndCategories() {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { get: (name) => cookieStore.get(name)?.value } }
+  );
 
   const [{ data: products, error: productsError }, { data: categories, error: categoriesError }] = await Promise.all([
     supabase.from('products').select(`*, categories (name), product_images (image_url, alt_text)`),
@@ -101,4 +106,4 @@ export default async function ProductsPage({ searchParams }: { searchParams: { c
       </div>
     </div>
   );
-        }
+    }
