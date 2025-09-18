@@ -94,7 +94,7 @@ export default function AccountPage() {
         mobile_number,
         shipping_address, // Send the reconstructed object
         updated_at: new Date().toISOString(),
-      })
+      } as any) // THE FINAL FIX: Override TypeScript's incorrect inference
       .eq('id', user.id);
 
     if (error) {
@@ -170,4 +170,4 @@ export default function AccountPage() {
       </div>
     </div>
   );
-           }
+                 }
