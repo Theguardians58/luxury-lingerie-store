@@ -14,18 +14,28 @@ export interface Database {
           id: number
           name: string
           created_at: string
+          parent_id: number | null // Includes sub-category support
         }
         Insert: {
           id?: number
           name: string
           created_at?: string
+          parent_id?: number | null
         }
         Update: {
           id?: number
           name?: string
           created_at?: string
+          parent_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       products: {
         Row: {
@@ -129,18 +139,21 @@ export interface Database {
           full_name: string | null
           shipping_address: Json | null
           updated_at: string | null
+          mobile_number: string | null // <-- THE MISSING PIECE IS NOW HERE
         }
         Insert: {
           id: string
           full_name?: string | null
           shipping_address?: Json | null
           updated_at?: string | null
+          mobile_number?: string | null
         }
         Update: {
           id?: string
           full_name?: string | null
           shipping_address?: Json | null
           updated_at?: string | null
+          mobile_number?: string | null
         }
         Relationships: [
           {
@@ -238,7 +251,6 @@ export interface Database {
   }
 }
 
-// Helper type for product with related data
 export type ProductWithDetails = Database['public']['Tables']['products']['Row'] & {
   categories: Database['public']['Tables']['categories']['Row'] | null;
   product_images: Database['public']['Tables']['product_images']['Row'][];
