@@ -126,4 +126,4 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
       </div>
     </div>
   );
-            }
+        }
