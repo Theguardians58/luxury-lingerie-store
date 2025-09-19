@@ -2,9 +2,8 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { updateUserProfile } from './actions';
-import { Database } from '@/lib/types';
+import { Database } from '@/lib/types'; // We import the master dictionary
 
-// A helper type for the address object
 type Address = {
   street: string;
   city: string;
@@ -15,6 +14,7 @@ type Address = {
 
 export default async function AccountPage({ searchParams }: { searchParams: { message?: string }}) {
   const cookieStore = cookies();
+  // THE FIX: We give the client the master dictionary here as well.
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -32,14 +32,13 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
     redirect('/login');
   }
 
-  // Fetch the user's profile data on the server
+  // Now, TypeScript will correctly know the shape of 'profile'
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
     .single();
 
-  // Safely access the data, providing a default if it's missing
   const address: Address = (profile?.shipping_address as any) || {
       street: '', city: '', state: '', postalCode: '', country: ''
   };
@@ -126,4 +125,4 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
       </div>
     </div>
   );
-        }
+                            }
