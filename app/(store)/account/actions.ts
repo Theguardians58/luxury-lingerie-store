@@ -31,7 +31,6 @@ export async function updateUserProfile(formData: FormData) {
     country: formData.get('country') as string,
   };
 
-  // THE FINAL FIX: We call our custom database function instead of using .update()
   const { error } = await supabase
     .rpc('update_user_profile', {
       full_name_in: formData.get('full_name') as string,
@@ -46,20 +45,4 @@ export async function updateUserProfile(formData: FormData) {
 
   revalidatePath('/account');
   return redirect(`/account?message=Profile updated successfully!`);
-}  const { error } = await supabase
-    .from('profiles')
-    .update({
-      full_name: formData.get('full_name') as string,
-      mobile_number: formData.get('mobile_number') as string,
-      shipping_address: shipping_address,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', user.id);
-
-  if (error) {
-    return redirect(`/account?message=Error: Could not update profile.`);
-  }
-
-  revalidatePath('/account');
-  return redirect(`/account?message=Profile updated successfully!`);
-    }
+          }
