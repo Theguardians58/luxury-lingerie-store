@@ -9,51 +9,239 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      categories: { // ... content of categories table ...
-        Row: { id: number; name: string; created_at: string; parent_id: number | null };
-        Insert: { id?: number; name: string; created_at?: string; parent_id?: number | null };
-        Update: { id?: number; name?: string; created_at?: string; parent_id?: number | null };
-        Relationships: [ { foreignKeyName: "categories_parent_id_fkey"; columns: ["parent_id"]; referencedRelation: "categories"; referencedColumns: ["id"] } ]
-      },
-      products: { // ... content of products table ...
-        Row: { id: number; name: string; description: string | null; price: number; category_id: number | null; slug: string; created_at: string };
-        Insert: { id?: number; name: string; description?: string | null; price: number; category_id?: number | null; slug: string; created_at?: string };
-        Update: { id?: number; name?: string; description?: string | null; price?: number; category_id?: number | null; slug?: string; created_at?: string };
-        Relationships: [ { foreignKeyName: "products_category_id_fkey"; columns: ["category_id"]; referencedRelation: "categories"; referencedColumns: ["id"] } ]
-      },
-      product_variants: { // ... content of product_variants table ...
-        Row: { id: number; product_id: number; size: string; color: string; stock_quantity: number };
-        Insert: { id?: number; product_id: number; size: string; color: string; stock_quantity?: number };
-        Update: { id?: number; product_id?: number; size?: string; color?: string; stock_quantity?: number };
-        Relationships: [ { foreignKeyName: "product_variants_product_id_fkey"; columns: ["product_id"]; referencedRelation: "products"; referencedColumns: ["id"] } ]
-      },
-      product_images: { // ... content of product_images table ...
-        Row: { id: number; product_id: number; image_url: string; alt_text: string | null };
-        Insert: { id?: number; product_id: number; image_url: string; alt_text?: string | null };
-        Update: { id?: number; product_id?: number; image_url?: string; alt_text?: string | null };
-        Relationships: [ { foreignKeyName: "product_images_product_id_fkey"; columns: ["product_id"]; referencedRelation: "products"; referencedColumns: ["id"] } ]
-      },
-      profiles: { // ... content of profiles table ...
-        Row: { id: string; full_name: string | null; shipping_address: Json | null; updated_at: string | null; mobile_number: string | null };
-        Insert: { id: string; full_name?: string | null; shipping_address?: Json | null; updated_at?: string | null; mobile_number?: string | null };
-        Update: { id?: string; full_name?: string | null; shipping_address?: Json | null; updated_at?: string | null; mobile_number?: string | null };
-        Relationships: [ { foreignKeyName: "profiles_id_fkey"; columns: ["id"]; referencedRelation: "users"; referencedColumns: ["id"] } ]
-      },
-      orders: { // ... content of orders table ...
-        Row: { id: number; user_id: string | null; total_amount: number; status: string; created_at: string; shipping_address: Json | null };
-        Insert: { id?: number; user_id?: string | null; total_amount: number; status?: string; created_at?: string; shipping_address?: Json | null };
-        Update: { id?: number; user_id?: string | null; total_amount?: number; status?: string; created_at?: string; shipping_address?: Json | null };
-        Relationships: [ { foreignKeyName: "orders_user_id_fkey"; columns: ["user_id"]; referencedRelation: "users"; referencedColumns: ["id"] } ]
-      },
-      order_items: { // ... content of order_items table ...
-        Row: { id: number; order_id: number; variant_id: number | null; quantity: number; price: number };
-        Insert: { id?: number; order_id: number; variant_id?: number | null; quantity: number; price: number };
-        Update: { id?: number; order_id?: number; variant_id?: number | null; quantity?: number; price?: number };
-        Relationships: [ { foreignKeyName: "order_items_order_id_fkey"; columns: ["order_id"]; referencedRelation: "orders"; referencedColumns: ["id"] }, { foreignKeyName: "order_items_variant_id_fkey"; columns: ["variant_id"]; referencedRelation: "product_variants"; referencedColumns: ["id"] } ]
+      categories: {
+        Row: {
+          id: number
+          name: string
+          created_at: string
+          parent_id: number | null
+        }
+        Insert: {
+          id?: number
+          name: string
+          created_at?: string
+          parent_id?: number | null
+        }
+        Update: {
+          id?: number
+          name?: string
+          created_at?: string
+          parent_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          }
+        ]
       }
-    },
-    Views: { [_ in never]: never },
-    // --- THIS IS THE CRITICAL ADDITION ---
+      orders: {
+        Row: {
+          id: number
+          user_id: string | null
+          total_amount: number
+          status: string
+          created_at: string
+          shipping_address: Json | null
+        }
+        Insert: {
+          id?: number
+          user_id?: string | null
+          total_amount: number
+          status?: string
+          created_at?: string
+          shipping_address?: Json | null
+        }
+        Update: {
+          id?: number
+          user_id?: string | null
+          total_amount?: number
+          status?: string
+          created_at?: string
+          shipping_address?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      order_items: {
+        Row: {
+          id: number
+          order_id: number
+          variant_id: number | null
+          quantity: number
+          price: number
+        }
+        Insert: {
+          id?: number
+          order_id: number
+          variant_id?: number | null
+          quantity: number
+          price: number
+        }
+        Update: {
+          id?: number
+          order_id?: number
+          variant_id?: number | null
+          quantity?: number
+          price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_variant_id_fkey"
+            columns: ["variant_id"]
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      product_images: {
+        Row: {
+          id: number
+          product_id: number
+          image_url: string
+          alt_text: string | null
+        }
+        Insert: {
+          id?: number
+          product_id: number
+          image_url: string
+          alt_text?: string | null
+        }
+        Update: {
+          id?: number
+          product_id?: number
+          image_url?: string
+          alt_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      product_variants: {
+        Row: {
+          id: number
+          product_id: number
+          size: string
+          color: string
+          stock_quantity: number
+        }
+        Insert: {
+          id?: number
+          product_id: number
+          size: string
+          color: string
+          stock_quantity?: number
+        }
+        Update: {
+          id?: number
+          product_id?: number
+          size?: string
+          color?: string
+          stock_quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      products: {
+        Row: {
+          id: number
+          name: string
+          description: string | null
+          price: number
+          category_id: number | null
+          slug: string
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          name: string
+          description?: string | null
+          price: number
+          category_id?: number | null
+          slug: string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          name?: string
+          description?: string | null
+          price?: number
+          category_id?: number | null
+          slug?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      profiles: {
+        Row: {
+          id: string
+          full_name: string | null
+          shipping_address: Json | null
+          updated_at: string | null
+          mobile_number: string | null
+          is_admin: boolean | null // <-- THE NEW FIELD IS HERE
+        }
+        Insert: {
+          id: string
+          full_name?: string | null
+          shipping_address?: Json | null
+          updated_at?: string | null
+          mobile_number?: string | null
+          is_admin?: boolean | null // <-- AND HERE
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          shipping_address?: Json | null
+          updated_at?: string | null
+          mobile_number?: string | null
+          is_admin?: boolean | null // <-- AND HERE
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
       update_user_profile: {
         Args: {
@@ -62,7 +250,6 @@ export interface Database {
         Returns: undefined
       }
     }
-    // --- END OF CRITICAL ADDITION ---
   }
 }
 
@@ -71,3 +258,5 @@ export type ProductWithDetails = Database['public']['Tables']['products']['Row']
   product_images: Database['public']['Tables']['product_images']['Row'][];
   product_variants: Database['public']['Tables']['product_variants']['Row'][];
 };
+
+      
