@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { updateUserProfile } from './actions';
 import { Database } from '@/lib/types';
 
 // A helper type for the address object
@@ -32,74 +32,29 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
     redirect('/login');
   }
 
+  // Fetch the user's profile data on the server
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
     .single();
 
+  // Safely access the data, providing a default if it's missing
   const address: Address = (profile?.shipping_address as any) || {
       street: '', city: '', state: '', postalCode: '', country: ''
   };
 
-  // This is our secure server action to handle the form submission
-  async function updateUserProfile(formData: FormData) {
-    'use server';
-    const cookieStore = cookies();
-    const supabase = createServerClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        { cookies: { get: (name: string) => cookieStore.get(name)?.value } }
-    );
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return redirect('/login');
-
-    const shipping_address = {
-      street: formData.get('street') as string,
-      city: formData.get('city') as string,
-      state: formData.get('state') as string,
-      postalCode: formData.get('postalCode') as string,
-      country: formData.get('country') as string,
-    };
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: formData.get('full_name') as string,
-        mobile_number: formData.get('mobile_number') as string,
-        shipping_address: shipping_address,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
-
-    if (error) {
-      return redirect(`/account?message=Error: Could not update profile.`);
-    }
-
-    revalidatePath('/account');
-    return redirect(`/account?message=Profile updated successfully!`);
-  }
-
-  // This is the secure server action for signing out
   const signOut = async () => {
     'use server';
     const cookieStore = cookies();
-    // THE FINAL FIX: We provide the correct cookie handlers for set and remove
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.delete({ name, ...options })
-          },
+          get(name: string) { return cookieStore.get(name)?.value },
+          set(name: string, value: string, options: CookieOptions) { cookieStore.set({ name, value, ...options }) },
+          remove(name: string, options: CookieOptions) { cookieStore.delete({ name, ...options }) },
         },
       }
     );
@@ -111,10 +66,11 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-2xl mx-auto">
         {searchParams.message && (
-          <div className="mb-4 p-4 text-center text-white bg-gray-800 rounded-md">
+          <div className={`mb-4 p-4 text-center text-white rounded-md ${searchParams.message.startsWith('Error') ? 'bg-red-500' : 'bg-gray-800'}`}>
             <p>{searchParams.message}</p>
           </div>
         )}
+
         <h1 className="text-3xl font-bold mb-2">My Account</h1>
         <p className="text-gray-600 mb-8">Manage your personal information.</p>
         <div className="bg-white p-8 rounded-lg shadow-md">
@@ -137,23 +93,23 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
                <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                   <div className="sm:col-span-2">
                     <label htmlFor="street" className="block text-sm font-medium text-gray-700">Street Address</label>
-                    <input type="text" name="street" id="street" defaultValue={(address as any).street || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <input type="text" name="street" id="street" defaultValue={address.street} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                   </div>
                   <div>
                     <label htmlFor="city" className="block text-sm font-medium text-gray-700">City</label>
-                    <input type="text" name="city" id="city" defaultValue={(address as any).city || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <input type="text" name="city" id="city" defaultValue={address.city} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                   </div>
                   <div>
                     <label htmlFor="state" className="block text-sm font-medium text-gray-700">State / Province</label>
-                    <input type="text" name="state" id="state" defaultValue={(address as any).state || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <input type="text" name="state" id="state" defaultValue={address.state} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                   </div>
                    <div>
                     <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">Postal Code</label>
-                    <input type="text" name="postalCode" id="postalCode" defaultValue={(address as any).postalCode || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <input type="text" name="postalCode" id="postalCode" defaultValue={address.postalCode} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                   </div>
                   <div>
                     <label htmlFor="country" className="block text-sm font-medium text-gray-700">Country</label>
-                    <input type="text" name="country" id="country" defaultValue={(address as any).country || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    <input type="text" name="country" id="country" defaultValue={address.country} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
                   </div>
                </div>
             </div>
@@ -170,4 +126,4 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
       </div>
     </div>
   );
-         }
+            }
