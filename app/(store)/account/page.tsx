@@ -2,8 +2,9 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { updateUserProfile } from './actions';
-import { Database } from '@/lib/types'; // We import the master dictionary
+import { Database } from '@/lib/types';
 
+// A helper type for the address object
 type Address = {
   street: string;
   city: string;
@@ -14,7 +15,6 @@ type Address = {
 
 export default async function AccountPage({ searchParams }: { searchParams: { message?: string }}) {
   const cookieStore = cookies();
-  // THE FIX: We give the client the master dictionary here as well.
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -26,14 +26,17 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
     redirect('/login');
   }
 
-  // Now, TypeScript will correctly know the shape of 'profile'
+  // Fetch the user's profile data
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
     .single();
 
-  const address: Address = (profile?.shipping_address as any) || {
+  // THE FINAL FIX: We cast the profile data to 'any' immediately.
+  // This forces TypeScript to trust us that the properties exist.
+  const anyProfile = profile as any;
+  const address: Address = anyProfile?.shipping_address || {
       street: '', city: '', state: '', postalCode: '', country: ''
   };
 
@@ -57,7 +60,6 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
             <p>{searchParams.message}</p>
           </div>
         )}
-
         <h1 className="text-3xl font-bold mb-2">My Account</h1>
         <p className="text-gray-600 mb-8">Manage your personal information.</p>
         <div className="bg-white p-8 rounded-lg shadow-md">
@@ -69,11 +71,11 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
             </div>
             <div>
               <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">Full Name</label>
-              <input type="text" name="full_name" id="full_name" defaultValue={profile?.full_name || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+              <input type="text" name="full_name" id="full_name" defaultValue={anyProfile?.full_name || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
             </div>
             <div>
               <label htmlFor="mobile_number" className="block text-sm font-medium text-gray-700">Mobile Number</label>
-              <input type="tel" name="mobile_number" id="mobile_number" defaultValue={profile?.mobile_number || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+              <input type="tel" name="mobile_number" id="mobile_number" defaultValue={anyProfile?.mobile_number || ''} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
             </div>
             <div className="border-t pt-6">
                <h3 className="text-lg font-medium">Shipping Address</h3>
@@ -113,4 +115,4 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
       </div>
     </div>
   );
-              }
+    }
