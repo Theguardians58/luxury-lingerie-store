@@ -8,9 +8,6 @@ import { Database } from '@/lib/types';
 
 export async function updateUserProfile(formData: FormData) {
   const cookieStore = cookies();
-
-  // --- THIS IS THE CRUCIAL FIX ---
-  // We are now providing all 3 required arguments: URL, Key, and Options.
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -34,7 +31,22 @@ export async function updateUserProfile(formData: FormData) {
     country: formData.get('country') as string,
   };
 
+  // THE FINAL FIX: We call our custom database function instead of using .update()
   const { error } = await supabase
+    .rpc('update_user_profile', {
+      full_name_in: formData.get('full_name') as string,
+      mobile_number_in: formData.get('mobile_number') as string,
+      shipping_address_in: shipping_address
+    });
+
+  if (error) {
+    console.error('RPC Error:', error);
+    return redirect(`/account?message=Error: Could not update profile.`);
+  }
+
+  revalidatePath('/account');
+  return redirect(`/account?message=Profile updated successfully!`);
+}  const { error } = await supabase
     .from('profiles')
     .update({
       full_name: formData.get('full_name') as string,
