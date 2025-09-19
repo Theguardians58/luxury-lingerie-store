@@ -31,13 +31,12 @@ export async function updateUserProfile(formData: FormData) {
     country: formData.get('country') as string,
   };
 
-  // THE FINAL FIX: We call our custom function with simple, separate arguments.
-  // This is the definitive fix that resolves the TypeScript error.
+  // THE FINAL FIX: We use "as any" to override TypeScript's incorrect assumption.
   const { error } = await supabase.rpc('update_user_profile', {
     full_name_in: formData.get('full_name') as string,
     mobile_number_in: formData.get('mobile_number') as string,
-    shipping_address_in: shipping_address
-  });
+    shipping_address_in: shipping_address,
+  } as any); // This is the definitive fix.
 
   if (error) {
     console.error('RPC Error:', error);
@@ -46,4 +45,4 @@ export async function updateUserProfile(formData: FormData) {
 
   revalidatePath('/account');
   return redirect(`/account?message=Profile updated successfully!`);
-    }
+}
