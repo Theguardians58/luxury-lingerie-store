@@ -1,3 +1,4 @@
+import Chatbot from '@/components/layout/Chatbot';
 import './globals.css';
 import { Inter } from 'next/font/google';
 import Navbar from '@/components/layout/Navbar'; // We will create this next
@@ -26,6 +27,7 @@ export default function RootLayout({
           </main>
           {/* Footer will go here */}
           <Toaster position="bottom-right" />
+          <Chatbot />
         </CartProvider>
       </body>
     </html>
