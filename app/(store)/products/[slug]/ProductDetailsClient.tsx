@@ -13,64 +13,65 @@ interface ProductDetailsClientProps {
 export default function ProductDetailsClient({ product }: ProductDetailsClientProps) {
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(product.product_images?.[0]?.image_url || 'https://placehold.co/600x800');
-
+  
   const variants = product.product_variants || [];
   const allSizes = Array.from(new Set(variants.map(v => v.size))).filter(Boolean);
 
   const [selectedSize, setSelectedSize] = useState<string | null>(allSizes[0] || null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-
+  
   const [availableColorsForSize, setAvailableColorsForSize] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(1);
 
-  // This is the "brain" that reacts when the user changes the size.
+  // This "brain" reacts when the user changes the size.
   useEffect(() => {
     if (selectedSize) {
-      // 1. Find all colors available for the newly selected size.
       const colorsForSelectedSize = variants
         .filter(variant => variant.size === selectedSize)
         .map(variant => variant.color);
-
+      
       const uniqueColorsForSize = Array.from(new Set(colorsForSelectedSize)).filter(Boolean);
       setAvailableColorsForSize(uniqueColorsForSize);
-
-      // 2. Decide what to do with the color selection.
-      //    A) If there's only one color, automatically select it.
+      
       if (uniqueColorsForSize.length === 1) {
         setSelectedColor(uniqueColorsForSize[0]);
-      } 
-      //    B) If there are multiple colors (or zero), we must check the current selection.
-      else {
-        // If the previously selected color is NOT valid for this new size,
-        // clear it to force the user to make a new choice.
-        if (selectedColor && !uniqueColorsForSize.includes(selectedColor)) {
-          setSelectedColor(null);
-        }
+      } else if (selectedColor && !uniqueColorsForSize.includes(selectedColor)) {
+        setSelectedColor(null);
       }
     }
-  }, [selectedSize, variants]); // This logic now runs ONLY when the size changes.
+  }, [selectedSize, variants, selectedColor]); // Dependencies
 
+  // --- THIS IS THE NEW FEATURE ---
+  // This "brain" reacts when the user changes the color.
+  useEffect(() => {
+    if (selectedColor) {
+      // Find the image in our gallery that matches the selected color.
+      const imageForColor = product.product_images.find(
+        (img) => img.color?.toLowerCase() === selectedColor.toLowerCase()
+      );
+
+      // If we find a matching image, update the main display image.
+      if (imageForColor) {
+        setSelectedImage(imageForColor.image_url);
+      }
+    }
+  }, [selectedColor, product.product_images]); // Re-run when color changes
+  // --- END OF NEW FEATURE ---
 
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
       toast.error('Please select a size and color.');
       return;
     }
-
-    const selectedVariant = variants.find(
-      v => v.size === selectedSize && v.color === selectedColor
-    );
-
+    const selectedVariant = variants.find(v => v.size === selectedSize && v.color === selectedColor);
     if (!selectedVariant) {
       toast.error('This combination is not available.');
       return;
     }
-
     if (selectedVariant.stock_quantity < quantity) {
       toast.error('Not enough stock available.');
       return;
     }
-
     addToCart(product, selectedVariant, quantity);
   };
 
@@ -98,7 +99,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
           <h1 className="text-3xl lg:text-4xl font-bold mb-2">{product.name}</h1>
           <p className="text-2xl text-gray-900 mb-4">${product.price}</p>
           <p className="text-gray-600 leading-relaxed mb-6">{product.description}</p>
-
+          
           {/* Size Selector */}
           <div className="mb-4">
             <h3 className="text-sm font-medium text-gray-900 mb-2">Size</h3>
@@ -126,7 +127,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                ))}
              </div>
           </div>
-
+          
           {/* Add to Cart Button */}
           <button onClick={handleAddToCart} className="w-full bg-gray-800 text-white py-3 rounded-md hover:bg-gray-700 transition disabled:bg-gray-400" disabled={!selectedSize || !selectedColor}>
             Add to Cart
@@ -135,4 +136,5 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
       </div>
     </div>
   );
-}
+    }
+        
