@@ -1,9 +1,10 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { updateUserProfile } from './actions';
-import { Database } from '@/lib/types'; // We import the master dictionary
+import { revalidatePath } from 'next/cache';
+import { Database } from '@/lib/types';
 
+// A helper type for the address object
 type Address = {
   street: string;
   city: string;
@@ -14,7 +15,6 @@ type Address = {
 
 export default async function AccountPage({ searchParams }: { searchParams: { message?: string }}) {
   const cookieStore = cookies();
-  // THE FIX: We give the client the master dictionary here as well.
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -32,16 +32,49 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
     redirect('/login');
   }
 
-  // Now, TypeScript will correctly know the shape of 'profile'
+  // Fetch the user's profile data
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
     .single();
-
+  
+  // Safely access the data, providing a default if it's missing
   const address: Address = (profile?.shipping_address as any) || {
       street: '', city: '', state: '', postalCode: '', country: ''
   };
+
+  // This is our secure server action to handle the form submission
+  async function updateUserProfile(formData: FormData) {
+    'use server';
+    const cookieStore = cookies();
+    const supabase = createServerClient<Database>({ cookies });
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return redirect('/login');
+    
+    const shipping_address = {
+      street: formData.get('street') as string,
+      city: formData.get('city') as string,
+      state: formData.get('state') as string,
+      postalCode: formData.get('postalCode') as string,
+      country: formData.get('country') as string,
+    };
+
+    // This call will now succeed because `update_user_profile` is correctly defined in our types
+    const { error } = await supabase.rpc('update_user_profile', {
+      full_name_in: formData.get('full_name') as string,
+      mobile_number_in: formData.get('mobile_number') as string,
+      shipping_address_in: shipping_address,
+    });
+
+    if (error) {
+      return redirect(`/account?message=Error: Could not update profile.`);
+    }
+    
+    revalidatePath('/account');
+    return redirect(`/account?message=Profile updated successfully!`);
+  }
 
   const signOut = async () => {
     'use server';
@@ -69,7 +102,6 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
             <p>{searchParams.message}</p>
           </div>
         )}
-
         <h1 className="text-3xl font-bold mb-2">My Account</h1>
         <p className="text-gray-600 mb-8">Manage your personal information.</p>
         <div className="bg-white p-8 rounded-lg shadow-md">
@@ -125,4 +157,5 @@ export default async function AccountPage({ searchParams }: { searchParams: { me
       </div>
     </div>
   );
-                            }
+          }
+      
